@@ -2,74 +2,65 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>WMP Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: #e5e7eb;
-            padding: 20px;
-        }
-        h1 {
-            color: #38bdf8;
-        }
-        section {
-            background: #020617;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-        input, button {
-            padding: 8px;
-            margin: 5px 0;
-            width: 100%;
-        }
-        button {
-            background: #38bdf8;
-            border: none;
-            cursor: pointer;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            background: #020617;
-            margin: 5px 0;
-            padding: 8px;
-            border-radius: 6px;
-        }
-    </style>
+    <title>WMP System</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-<h1>World MP – Dashboard</h1>
+<div class="app">
 
-<section>
-    <h2>➕ Person anlegen</h2>
-    <input id="firstName" placeholder="Vorname">
-    <input id="lastName" placeholder="Nachname">
-    <input id="role" placeholder="Rolle (Detective, Suspect)">
-    <button onclick="addPerson()">Speichern</button>
-</section>
+    <!-- LEFT ACTION BAR -->
+    <div class="sidebar">
+        <button class="action-btn">MADE NEW CASE</button>
+        <button class="action-btn">NEW PERSON</button>
+    </div>
 
-<section>
-    <h2>📋 Personen</h2>
-    <ul id="personList"></ul>
-</section>
+    <!-- MAIN CONTENT -->
+    <div class="main">
 
-<section>
-    <h2>➕ Case anlegen</h2>
-    <input id="caseTitle" placeholder="Titel">
-    <input id="casePriority" placeholder="Priority (low, normal, high)">
-    <button onclick="addCase()">Speichern</button>
-</section>
+        <!-- SEARCH -->
+        <div class="search-wrapper">
+            <input class="search-input" placeholder="Search">
+        </div>
 
-<section>
-    <h2>📂 Cases</h2>
-    <ul id="caseList"></ul>
-</section>
+        <!-- LIST -->
+        <div class="list">
 
-<script src="/static/app.js"></script>
+            <div class="card">
+                <span>Name: Alex Peterson</span>
+                <span>Age: 25</span>
+                <span>Case: Robbery</span>
+            </div>
+
+            <div class="card">
+                <span>Name: Alex Peterson</span>
+                <span>Age: 25</span>
+                <span>Case: Mord</span>
+            </div>
+
+            <div class="card">
+                <span>Name: Alex Peterson</span>
+                <span>Age: 25</span>
+                <span>Case: Unbekannt</span>
+            </div>
+
+            <div class="card">
+                <span>Name: Alex Peterson</span>
+                <span>Age: 25</span>
+                <span>Case: Robbery</span>
+            </div>
+
+            <div class="card">
+                <span>Name: Alex Peterson</span>
+                <span>Age: 25</span>
+                <span>Case: Robbery</span>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
 </body>
 </html>
+
