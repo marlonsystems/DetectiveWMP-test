@@ -1,14 +1,57 @@
-from flask import Flask, render_template
-from database import init_db
-from routes import api
+async function loadPersons() {
+    const res = await fetch("/persons");
+    const data = await res.json();
 
-app = Flask(__name__)
-app.register_blueprint(api)
+    const list = document.getElementById("personList");
+    list.innerHTML = "";
 
-@app.route("/")
-def dashboard():
-    return render_template("index.html")
+    data.forEach(p => {
+        const li = document.createElement("li");
+        li.textContent = `${p.first_name} ${p.last_name} (${p.role})`;
+        list.appendChild(li);
+    });
+}
 
-if __name__ == "__main__":
-    init_db()
-    app.run(debug=True)
+async function addPerson() {
+    await fetch("/persons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            first_name: document.getElementById("firstName").value,
+            last_name: document.getElementById("lastName").value,
+            role: document.getElementById("role").value
+        })
+    });
+
+    loadPersons();
+}
+
+async function loadCases() {
+    const res = await fetch("/cases");
+    const data = await res.json();
+
+    const list = document.getElementById("caseList");
+    list.innerHTML = "";
+
+    data.forEach(c => {
+        const li = document.createElement("li");
+        li.textContent = `${c.title} [${c.priority}]`;
+        list.appendChild(li);
+    });
+}
+
+async function addCase() {
+    await fetch("/cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            title: document.getElementById("caseTitle").value,
+            priority: document.getElementById("casePriority").value
+        })
+    });
+
+    loadCases();
+}
+
+loadPersons();
+loadCases();
