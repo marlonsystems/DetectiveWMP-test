@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>WMP Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            padding: 20px;
+        }
+        h1 {
+            color: #38bdf8;
+        }
+        section {
+            background: #020617;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        button {
+            background: #38bdf8;
+            border: none;
+            cursor: pointer;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: #020617;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>World MP – Dashboard</h1>
+
+<section>
+    <h2>➕ Person anlegen</h2>
+    <input id="firstName" placeholder="Vorname">
+    <input id="lastName" placeholder="Nachname">
+    <input id="role" placeholder="Rolle (Detective, Suspect)">
+    <button onclick="addPerson()">Speichern</button>
+</section>
+
+<section>
+    <h2>📋 Personen</h2>
+    <ul id="personList"></ul>
+</section>
+
+<section>
+    <h2>➕ Case anlegen</h2>
+    <input id="caseTitle" placeholder="Titel">
+    <input id="casePriority" placeholder="Priority (low, normal, high)">
+    <button onclick="addCase()">Speichern</button>
+</section>
+
+<section>
+    <h2>📂 Cases</h2>
+    <ul id="caseList"></ul>
+</section>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
