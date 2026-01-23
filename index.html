@@ -1,66 +1,229 @@
+from flask import Flask, request, jsonify, render_template_string
+import sqlite3
+
+app = Flask(__name__)
+DB = "wmp.db"
+
+# ---------- DATABASE ----------
+def get_db():
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    db = get_db()
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS persons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        age INTEGER,
+        case_name TEXT,
+        notes TEXT
+    )
+    """)
+    db.commit()
+    db.close()
+
+# ---------- API ----------
+@app.route("/api/persons", methods=["GET"])
+def get_persons():
+    db = get_db()
+    persons = db.execute("SELECT * FROM persons").fetchall()
+    db.close()
+    return jsonify([dict(p) for p in persons])
+
+@app.route("/api/persons", methods=["POST"])
+def add_person():
+    data = request.json
+    db = get_db()
+    db.execute(
+        "INSERT INTO persons (name, age, case_name, notes) VALUES (?, ?, ?, ?)",
+        (data["name"], data["age"], data["case"], data.get("notes", ""))
+    )
+    db.commit()
+    db.close()
+    return jsonify({"status": "saved"})
+
+@app.route("/api/persons/<int:pid>", methods=["GET"])
+def get_person(pid):
+    db = get_db()
+    p = db.execute("SELECT * FROM persons WHERE id = ?", (pid,)).fetchone()
+    db.close()
+    return jsonify(dict(p))
+
+# ---------- UI ----------
+HTML = """
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>WMP System</title>
-    <link rel="stylesheet" href="/static/style.css">
+<meta charset="UTF-8">
+<title>WMP System</title>
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #fff;
+}
+.app {
+    display: flex;
+    padding: 20px;
+}
+.sidebar {
+    width: 200px;
+}
+.btn {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #b0b0b0;
+    border: 1px solid #777;
+    font-weight: bold;
+    cursor: pointer;
+}
+.main {
+    flex: 1;
+    margin-left: 40px;
+}
+.search {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+.search input {
+    width: 300px;
+    padding: 10px;
+    border-radius: 20px;
+    border: 2px solid #000;
+    text-align: center;
+}
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.card {
+    background: #a6a6a6;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    cursor: pointer;
+}
+.detail {
+    margin-top: 30px;
+    background: #d4d4d4;
+    padding: 20px;
+    border-radius: 8px;
+    display: none;
+}
+.detail h3 {
+    margin-top: 0;
+}
+</style>
 </head>
 <body>
 
 <div class="app">
-
-    <!-- LEFT ACTION BAR -->
     <div class="sidebar">
-        <button class="action-btn">MADE NEW CASE</button>
-        <button class="action-btn">NEW PERSON</button>
+        <button class="btn" onclick="newPerson()">NEW PERSON</button>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div class="main">
-
-        <!-- SEARCH -->
-        <div class="search-wrapper">
-            <input class="search-input" placeholder="Search">
+        <div class="search">
+            <input placeholder="Search" oninput="filterList(this.value)">
         </div>
 
-        <!-- LIST -->
-        <div class="list">
+        <div class="list" id="list"></div>
 
-            <div class="card">
-                <span>Name: Alex Peterson</span>
-                <span>Age: 25</span>
-                <span>Case: Robbery</span>
-            </div>
-
-            <div class="card">
-                <span>Name: Alex Peterson</span>
-                <span>Age: 25</span>
-                <span>Case: Mord</span>
-            </div>
-
-            <div class="card">
-                <span>Name: Alex Peterson</span>
-                <span>Age: 25</span>
-                <span>Case: Unbekannt</span>
-            </div>
-
-            <div class="card">
-                <span>Name: Alex Peterson</span>
-                <span>Age: 25</span>
-                <span>Case: Robbery</span>
-            </div>
-
-            <div class="card">
-                <span>Name: Alex Peterson</span>
-                <span>Age: 25</span>
-                <span>Case: Robbery</span>
-            </div>
-
-        </div>
+        <div class="detail" id="detail"></div>
     </div>
-
 </div>
+
+<script>
+let persons = [];
+
+function load() {
+    fetch("/api/persons")
+        .then(r => r.json())
+        .then(data => {
+            persons = data;
+            render(data);
+        });
+}
+
+function render(data) {
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+    data.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+            <span>Name: ${p.name}</span>
+            <span>Age: ${p.age}</span>
+            <span>Case: ${p.case_name}</span>
+        `;
+        div.onclick = () => openDetail(p.id);
+        list.appendChild(div);
+    });
+}
+
+function filterList(value) {
+    const v = value.toLowerCase();
+    render(persons.filter(p =>
+        p.name.toLowerCase().includes(v) ||
+        p.case_name.toLowerCase().includes(v)
+    ));
+}
+
+function openDetail(id) {
+    fetch("/api/persons/" + id)
+        .then(r => r.json())
+        .then(p => {
+            const d = document.getElementById("detail");
+            d.style.display = "block";
+            d.innerHTML = `
+                <h3>Person Detail</h3>
+                <p><b>Name:</b> ${p.name}</p>
+                <p><b>Age:</b> ${p.age}</p>
+                <p><b>Case:</b> ${p.case_name}</p>
+                <p><b>Notes:</b> ${p.notes || "-"}</p>
+            `;
+        });
+}
+
+function newPerson() {
+    const name = prompt("Name");
+    const age = prompt("Age");
+    const c = prompt("Case");
+    const notes = prompt("Notes (optional)");
+
+    if (!name || !age || !c) return;
+
+    fetch("/api/persons", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            name: name,
+            age: age,
+            case: c,
+            notes: notes
+        })
+    }).then(load);
+}
+
+load();
+</script>
 
 </body>
 </html>
+"""
 
+@app.route("/")
+def index():
+    return render_template_string(HTML)
+
+# ---------- START ----------
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True)
