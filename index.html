@@ -9,7 +9,7 @@ body {
     margin: 0;
     font-family: Arial, sans-serif;
     background: #0f1115;
-    color: #fff;
+    color: #ffffff;
     display: flex;
     height: 100vh;
 }
@@ -27,7 +27,7 @@ body {
 
 .person {
     background: #1e2230;
-    padding: 15px;
+    padding: 16px;
     margin-bottom: 10px;
     cursor: pointer;
     border-radius: 8px;
@@ -45,41 +45,42 @@ body {
 
 input, textarea {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin-bottom: 10px;
     background: #1e2230;
     border: none;
     border-radius: 6px;
-    color: #fff;
+    color: #ffffff;
     font-size: 16px;
 }
 
 textarea {
-    height: 70px;
+    height: 80px;
 }
 
 label {
     display: block;
     margin: 6px 0;
+    font-size: 15px;
 }
 
 button {
-    padding: 12px;
-    margin-right: 10px;
+    padding: 12px 16px;
     font-size: 16px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
+    margin-right: 10px;
 }
 
 .save {
     background: #3b82f6;
-    color: #fff;
+    color: #ffffff;
 }
 
 .delete {
     background: #ef4444;
-    color: #fff;
+    color: #ffffff;
 }
 </style>
 </head>
@@ -108,7 +109,7 @@ button {
     <label><input type="checkbox" id="clean"> Clean / Safe</label>
     <label><input type="checkbox" id="prison"> Derzeit in Haft</label>
 
-    <br>
+    <br><br>
     <button class="save" onclick="savePerson()">Speichern</button>
     <button class="delete" onclick="deletePerson()">Löschen</button>
 </div>
@@ -120,10 +121,17 @@ let currentIndex = null;
 function renderList() {
     const list = document.getElementById("personList");
     list.innerHTML = "";
+
     persons.forEach((p, i) => {
         const div = document.createElement("div");
         div.className = "person";
-        div.innerText = p.name || "Unbekannt";
+
+        const displayName =
+            p.name && p.name.trim().length > 0
+            ? p.name
+            : "Unbekannt";
+
+        div.innerText = displayName;
         div.onclick = () => loadPerson(i);
         list.appendChild(div);
     });
@@ -132,6 +140,7 @@ function renderList() {
 function addPerson() {
     persons.push({});
     currentIndex = persons.length - 1;
+    saveStorage();
     renderList();
     loadPerson(currentIndex);
 }
@@ -139,12 +148,14 @@ function addPerson() {
 function loadPerson(index) {
     currentIndex = index;
     const p = persons[index];
+
     name.value = p.name || "";
     age.value = p.age || "";
     height.value = p.height || "";
     eyes.value = p.eyes || "";
     info.value = p.info || "";
     crimes.value = p.crimes || "";
+
     warrant.checked = p.warrant || false;
     watch.checked = p.watch || false;
     clean.checked = p.clean || false;
@@ -167,7 +178,7 @@ function savePerson() {
         prison: prison.checked
     };
 
-    localStorage.setItem("wmp_persons", JSON.stringify(persons));
+    saveStorage();
     renderList();
     alert("Gespeichert");
 }
@@ -182,10 +193,28 @@ function deletePerson() {
     }
 
     persons.splice(currentIndex, 1);
-    localStorage.setItem("wmp_persons", JSON.stringify(persons));
     currentIndex = null;
+    saveStorage();
     renderList();
+    clearFields();
     alert("Person gelöscht");
+}
+
+function saveStorage() {
+    localStorage.setItem("wmp_persons", JSON.stringify(persons));
+}
+
+function clearFields() {
+    name.value = "";
+    age.value = "";
+    height.value = "";
+    eyes.value = "";
+    info.value = "";
+    crimes.value = "";
+    warrant.checked = false;
+    watch.checked = false;
+    clean.checked = false;
+    prison.checked = false;
 }
 
 renderList();
