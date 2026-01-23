@@ -1,57 +1,189 @@
-async function loadPersons() {
-    const res = await fetch("/persons");
-    const data = await res.json();
+from flask import Flask, request, jsonify, render_template_string
+import sqlite3
 
-    const list = document.getElementById("personList");
+app = Flask(__name__)
+DB = "wmp.db"
+
+# ---------- DATABASE ----------
+def get_db():
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    db = get_db()
+    db.execute("""
+    CREATE TABLE IF NOT EXISTS persons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        age INTEGER,
+        case_name TEXT
+    )
+    """)
+    db.commit()
+    db.close()
+
+# ---------- API ----------
+@app.route("/api/persons", methods=["GET"])
+def get_persons():
+    db = get_db()
+    persons = db.execute("SELECT * FROM persons").fetchall()
+    db.close()
+    return jsonify([dict(p) for p in persons])
+
+@app.route("/api/persons", methods=["POST"])
+def add_person():
+    data = request.json
+    db = get_db()
+    db.execute(
+        "INSERT INTO persons (name, age, case_name) VALUES (?, ?, ?)",
+        (data["name"], data["age"], data["case"])
+    )
+    db.commit()
+    db.close()
+    return jsonify({"status": "saved"})
+
+# ---------- UI ----------
+HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>WMP System</title>
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #fff;
+}
+.app {
+    display: flex;
+    padding: 20px;
+}
+.sidebar {
+    width: 200px;
+}
+.btn {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #b0b0b0;
+    border: 1px solid #777;
+    font-weight: bold;
+    cursor: pointer;
+}
+.main {
+    flex: 1;
+    margin-left: 40px;
+}
+.search {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+.search input {
+    width: 300px;
+    padding: 10px;
+    border-radius: 20px;
+    border: 2px solid #000;
+    text-align: center;
+}
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.card {
+    background: #a6a6a6;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+    <div class="sidebar">
+        <button class="btn" onclick="newPerson()">NEW PERSON</button>
+    </div>
+
+    <div class="main">
+        <div class="search">
+            <input placeholder="Search" oninput="filterList(this.value)">
+        </div>
+
+        <div class="list" id="list"></div>
+    </div>
+</div>
+
+<script>
+let persons = [];
+
+function load() {
+    fetch("/api/persons")
+        .then(r => r.json())
+        .then(data => {
+            persons = data;
+            render(data);
+        });
+}
+
+function render(data) {
+    const list = document.getElementById("list");
     list.innerHTML = "";
-
     data.forEach(p => {
-        const li = document.createElement("li");
-        li.textContent = `${p.first_name} ${p.last_name} (${p.role})`;
-        list.appendChild(li);
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+            <span>Name: ${p.name}</span>
+            <span>Age: ${p.age}</span>
+            <span>Case: ${p.case_name}</span>
+        `;
+        list.appendChild(div);
     });
 }
 
-async function addPerson() {
-    await fetch("/persons", {
+function filterList(value) {
+    const v = value.toLowerCase();
+    render(persons.filter(p =>
+        p.name.toLowerCase().includes(v) ||
+        p.case_name.toLowerCase().includes(v)
+    ));
+}
+
+function newPerson() {
+    const name = prompt("Name");
+    const age = prompt("Age");
+    const c = prompt("Case");
+
+    if (!name || !age || !c) return;
+
+    fetch("/api/persons", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            first_name: document.getElementById("firstName").value,
-            last_name: document.getElementById("lastName").value,
-            role: document.getElementById("role").value
+            name: name,
+            age: age,
+            case: c
         })
-    });
-
-    loadPersons();
+    }).then(load);
 }
 
-async function loadCases() {
-    const res = await fetch("/cases");
-    const data = await res.json();
+load();
+</script>
 
-    const list = document.getElementById("caseList");
-    list.innerHTML = "";
+</body>
+</html>
+"""
 
-    data.forEach(c => {
-        const li = document.createElement("li");
-        li.textContent = `${c.title} [${c.priority}]`;
-        list.appendChild(li);
-    });
-}
+@app.route("/")
+def index():
+    return render_template_string(HTML)
 
-async function addCase() {
-    await fetch("/cases", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            title: document.getElementById("caseTitle").value,
-            priority: document.getElementById("casePriority").value
-        })
-    });
-
-    loadCases();
-}
-
-loadPersons();
-loadCases();
+# ---------- START ----------
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True)
