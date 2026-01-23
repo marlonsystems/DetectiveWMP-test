@@ -2,160 +2,221 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>WMP – Personen System</title>
+<title>WMP Secure System</title>
 
 <style>
 body {
     margin: 0;
     font-family: Arial, sans-serif;
     background: #0f1115;
-    color: #ffffff;
+    color: #fff;
+}
+
+/* LOGIN */
+#login {
     display: flex;
+    align-items: center;
+    justify-content: center;
     height: 100vh;
+}
+
+.login-box {
+    background: #151820;
+    padding: 30px;
+    border-radius: 10px;
+    width: 300px;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #1e2230;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.save { background: #3b82f6; color: #fff; }
+.delete { background: #ef4444; color: #fff; }
+
+#app { display: none; height: 100vh; }
+
+/* LAYOUT */
+.container {
+    display: flex;
+    height: 100%;
 }
 
 .sidebar {
     width: 30%;
     background: #151820;
-    padding: 20px;
+    padding: 15px;
     overflow-y: auto;
-}
-
-.sidebar h2 {
-    margin-top: 0;
-}
-
-.person {
-    background: #1e2230;
-    padding: 16px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    border-radius: 8px;
-    font-size: 18px;
-}
-
-.person:hover {
-    background: #2a2f45;
 }
 
 .main {
     width: 70%;
-    padding: 25px;
+    padding: 20px;
 }
 
-input, textarea {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 10px;
+.person {
     background: #1e2230;
-    border: none;
-    border-radius: 6px;
-    color: #ffffff;
-    font-size: 16px;
-}
-
-textarea {
-    height: 80px;
-}
-
-label {
-    display: block;
-    margin: 6px 0;
-    font-size: 15px;
-}
-
-button {
-    padding: 12px 16px;
-    font-size: 16px;
-    border: none;
-    border-radius: 6px;
+    padding: 14px;
+    border-radius: 8px;
+    margin-bottom: 10px;
     cursor: pointer;
-    margin-right: 10px;
 }
 
-.save {
-    background: #3b82f6;
-    color: #ffffff;
+.badge {
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-right: 4px;
 }
 
-.delete {
-    background: #ef4444;
-    color: #ffffff;
+.red { background: #ef4444; }
+.yellow { background: #eab308; }
+.green { background: #22c55e; }
+.blue { background: #3b82f6; }
+
+.logs {
+    background: #151820;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-size: 13px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 </style>
 </head>
 
 <body>
 
+<!-- LOGIN -->
+<div id="login">
+    <div class="login-box">
+        <h3>WMP Login</h3>
+        <input id="user" placeholder="Detective">
+        <input id="pass" type="password" placeholder="Passwort">
+        <button class="save" onclick="login()">Login</button>
+    </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="container">
+
 <div class="sidebar">
-    <h2>Personen</h2>
+    <h3>Personen</h3>
+    <input id="search" placeholder="🔍 Suche..." oninput="renderList()">
     <button class="save" onclick="addPerson()">+ Neue Person</button>
     <div id="personList"></div>
 </div>
 
 <div class="main">
-    <h2>Details</h2>
+    <h3>Details</h3>
 
     <input id="name" placeholder="Name">
     <input id="age" placeholder="Alter">
     <input id="height" placeholder="Größe">
     <input id="eyes" placeholder="Augenfarbe">
 
-    <textarea id="info" placeholder="Weitere Informationen"></textarea>
+    <textarea id="info" placeholder="Weitere Infos"></textarea>
     <textarea id="crimes" placeholder="Delikte"></textarea>
 
     <label><input type="checkbox" id="warrant"> Haftbefehl</label>
     <label><input type="checkbox" id="watch"> Unter Beobachtung</label>
-    <label><input type="checkbox" id="clean"> Clean / Safe</label>
-    <label><input type="checkbox" id="prison"> Derzeit in Haft</label>
+    <label><input type="checkbox" id="clean"> Clean</label>
+    <label><input type="checkbox" id="prison"> In Haft</label>
 
     <br><br>
     <button class="save" onclick="savePerson()">Speichern</button>
     <button class="delete" onclick="deletePerson()">Löschen</button>
+
+    <div class="logs" id="logs"></div>
+</div>
+
+</div>
 </div>
 
 <script>
+/* AUTH */
+function login() {
+    if (user.value === "admin" && pass.value === "wmp2025") {
+        localStorage.setItem("wmp_auth", "true");
+        location.reload();
+    } else alert("Zugriff verweigert");
+}
+
+if (localStorage.getItem("wmp_auth") === "true") {
+    login.style.display = "none";
+    app.style.display = "block";
+}
+
+/* DATA */
 let persons = JSON.parse(localStorage.getItem("wmp_persons")) || [];
+let logs = JSON.parse(localStorage.getItem("wmp_logs")) || [];
 let currentIndex = null;
 
+function log(action) {
+    logs.unshift(new Date().toLocaleString() + " – " + action);
+    localStorage.setItem("wmp_logs", JSON.stringify(logs));
+    renderLogs();
+}
+
+function renderLogs() {
+    logsDiv.innerHTML = logs.map(l => "• " + l).join("<br>");
+}
+
+/* LIST */
 function renderList() {
-    const list = document.getElementById("personList");
-    list.innerHTML = "";
+    personList.innerHTML = "";
+    const q = search.value.toLowerCase();
 
     persons.forEach((p, i) => {
+        const name = p.name?.trim() || "Unbekannt";
+        if (!name.toLowerCase().includes(q)) return;
+
         const div = document.createElement("div");
         div.className = "person";
-
-        const displayName =
-            p.name && p.name.trim().length > 0
-            ? p.name
-            : "Unbekannt";
-
-        div.innerText = displayName;
+        div.innerHTML = `
+            <b>${name}</b><br>
+            ${p.warrant ? '<span class="badge red">Haftbefehl</span>' : ''}
+            ${p.watch ? '<span class="badge yellow">Beobachtung</span>' : ''}
+            ${p.clean ? '<span class="badge green">Clean</span>' : ''}
+            ${p.prison ? '<span class="badge blue">In Haft</span>' : ''}
+        `;
         div.onclick = () => loadPerson(i);
-        list.appendChild(div);
+        personList.appendChild(div);
     });
 }
 
+/* CRUD */
 function addPerson() {
     persons.push({});
     currentIndex = persons.length - 1;
-    saveStorage();
+    save();
     renderList();
-    loadPerson(currentIndex);
 }
 
-function loadPerson(index) {
-    currentIndex = index;
-    const p = persons[index];
-
+function loadPerson(i) {
+    currentIndex = i;
+    const p = persons[i];
     name.value = p.name || "";
     age.value = p.age || "";
     height.value = p.height || "";
     eyes.value = p.eyes || "";
     info.value = p.info || "";
     crimes.value = p.crimes || "";
-
     warrant.checked = p.warrant || false;
     watch.checked = p.watch || false;
     clean.checked = p.clean || false;
@@ -164,7 +225,6 @@ function loadPerson(index) {
 
 function savePerson() {
     if (currentIndex === null) return;
-
     persons[currentIndex] = {
         name: name.value,
         age: age.value,
@@ -177,47 +237,27 @@ function savePerson() {
         clean: clean.checked,
         prison: prison.checked
     };
-
-    saveStorage();
+    log("Person gespeichert: " + (name.value || "Unbekannt"));
+    save();
     renderList();
-    alert("Gespeichert");
 }
 
 function deletePerson() {
-    if (currentIndex === null) return;
-
-    const code = prompt("Delete-Code eingeben:");
-    if (code !== "2025") {
-        alert("Falscher Code");
-        return;
-    }
-
+    const code = prompt("Delete-Code:");
+    if (code !== "2025") return alert("Falscher Code");
+    log("Person gelöscht");
     persons.splice(currentIndex, 1);
     currentIndex = null;
-    saveStorage();
+    save();
     renderList();
-    clearFields();
-    alert("Person gelöscht");
 }
 
-function saveStorage() {
+function save() {
     localStorage.setItem("wmp_persons", JSON.stringify(persons));
 }
 
-function clearFields() {
-    name.value = "";
-    age.value = "";
-    height.value = "";
-    eyes.value = "";
-    info.value = "";
-    crimes.value = "";
-    warrant.checked = false;
-    watch.checked = false;
-    clean.checked = false;
-    prison.checked = false;
-}
-
 renderList();
+renderLogs();
 </script>
 
 </body>
